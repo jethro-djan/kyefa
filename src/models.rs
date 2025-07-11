@@ -1,12 +1,32 @@
 use uuid::Uuid;
 use chrono::NaiveDateTime;
-use sqlx::{FromRow, Type};
 use serde::{Serialize, Deserialize};
+
+// =========== USER ============
+
+/// Role of a system user
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum UserRole {
+    Admin,
+    CommitteeMember,
+    Headteacher,
+    DataEntry,
+}
+
+/// A system login user
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UserAccount {
+    pub id: Uuid,
+    pub username: String,
+    pub password_hash: String,
+    pub role: UserRole,
+    pub is_active: bool,
+}
 
 // =========== INTERNAL APP STATE ============
 
 /// Represents a person’s full name
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PersonName {
     pub first_name: String,
     pub surname: String,
@@ -14,14 +34,14 @@ pub struct PersonName {
 }
 
 /// Gender enum
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Gender {
     Male,
     Female,
 }
 
 /// Academic class/level
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ClassLevel {
     LowerSecondaryYear8,
     LowerSecondaryYear9,
@@ -194,85 +214,3 @@ struct TeacherPayoutItem {
     conducted_period_id: Uuid,
     paid_amount: f64,
 }
-
-// =========== DB ENTITIES ============
-
-/// Row from the `students` table
-#[derive(Debug, FromRow)]
-pub struct StudentRow {
-    pub id: Uuid,
-    pub first_name: String,
-    pub surname: String,
-    pub other_names: Option<String>,
-    pub gender: String,
-    pub class_level: String,
-    pub active: bool,
-}
-
-/// Row from the `teachers` table
-#[derive(Debug, FromRow)]
-pub struct TeacherRow {
-    pub id: Uuid,
-    pub first_name: String,
-    pub surname: String,
-    pub other_names: Option<String>,
-    pub status: String,
-    pub active: bool,
-}
-
-/// Row from the `subjects` table
-#[derive(Debug, FromRow)]
-pub struct SubjectRow {
-    pub id: Uuid,
-    pub name: String,
-    pub stream: String,
-}
-
-/// Row from the `conducted_periods` table
-#[derive(Debug, FromRow)]
-pub struct ConductedPeriodRow {
-    pub id: Uuid,
-    pub date: NaiveDateTime,
-    pub weekday: String,
-    pub class_level: String,
-    pub subject_id: Uuid,
-    pub teacher_id: Uuid,
-    pub term_id: Uuid,
-    pub week_of_term: i32,
-    pub was_conducted: bool,
-    pub notes: Option<String>,
-}
-
-/// Row from the `terms` table
-#[derive(Debug, FromRow)]
-pub struct TermRow {
-    pub id: Uuid,
-    pub name: String,
-    pub academic_year: String,
-    pub start_date: NaiveDateTime,
-    pub end_date: NaiveDateTime,
-    pub is_active: bool,
-}
-
-// =========== USER ============
-
-/// Role of a system user
-#[derive(Debug, Clone, Type, PartialEq, Serialize)]
-#[sqlx(rename_all = "lowercase")]
-pub enum UserRole {
-    Admin,
-    CommitteeMember,
-    Headteacher,
-    DataEntry,
-}
-
-/// A system login user
-#[derive(Debug, Clone, FromRow, Serialize)]
-pub struct UserAccount {
-    pub id: Uuid,
-    pub username: String,
-    pub password_hash: String,
-    pub role: UserRole,
-    pub is_active: bool,
-}
-
