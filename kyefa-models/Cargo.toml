@@ -1,0 +1,14 @@
+[package]
+name = "kyefa-models"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+uuid = { workspace = true }
+serde = { workspace = true }
+chrono = { workspace = true }
+sqlx = { workspace = true, features = ["postgres", "uuid", "chrono"], optional = true }
+
+[features]
+default = []
+database = ["sqlx"]

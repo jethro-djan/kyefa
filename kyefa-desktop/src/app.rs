@@ -1,7 +1,7 @@
 use iced::{Element, Task, Theme, Settings};
 use uuid::Uuid;
 
-use crate::models::{UserAccount, UserProfile, UserRole, PersonName};
+use kyefa_models::{UserAccount, UserProfile, UserRole, PersonName};
 use crate::routes;
 use crate::ui::{login_view, dashboard_view};
 use crate::error::{AppError, LoginError, PasswordChangeError, DashboardError};
@@ -81,11 +81,9 @@ impl KyefaApp {
                                 password_hash: "".to_string(),
                                 role: UserRole::Admin,
                                 is_active: true,
-                                name: PersonName {
-                                    first_name: "John".to_string(),
-                                    surname: "Doe".to_string(),
-                                    other_names: Some("Admin".to_string()),
-                                },
+                                first_name: "John".to_string(),
+                                surname: "Doe".to_string(),
+                                other_names: Some("Admin".to_string()),
                             };
                             self.state = AppState::Dashboard(DashboardState::new(temp_user));
                             Task::none()

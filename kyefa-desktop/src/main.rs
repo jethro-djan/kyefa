@@ -1,3 +1,3 @@
 fn main() -> iced::Result {
-    kyefa::app::run()
+    kyefa_desktop::app::run()
 }

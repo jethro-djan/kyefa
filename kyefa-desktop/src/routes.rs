@@ -2,7 +2,7 @@
 use reqwest::{Client, StatusCode};
 use serde_json::json;
 
-use crate::models::UserAccount;
+use kyefa_models::UserAccount;
 use crate::error::{LoginError};
 
 pub async fn login(username: &str, password: &str) -> Result<UserAccount, LoginError> {
