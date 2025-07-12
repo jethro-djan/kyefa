@@ -1,6 +1,7 @@
-use uuid::Uuid;
+use {uuid::uuid, uuid::Uuid};
 use chrono::NaiveDateTime;
 use serde::{Serialize, Deserialize};
+use std::str::FromStr;
 
 #[cfg(feature = "database")]
 use sqlx::{FromRow, Type};
@@ -62,6 +63,32 @@ impl From<UserAccount> for UserProfile {
             role: account.role,
         }
     }
+}
+
+impl From<UserResponse> for UserProfile {
+    fn from(account: UserResponse) -> Self {
+        Self {
+            id: Uuid::from_str(&account.id).expect("Invalid UUID from server"),
+            username: account.username,
+            name: PersonName {
+                first_name: account.first_name,
+                surname: account.surname,
+                other_names: account.other_names,
+            },
+            role: account.role,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct UserResponse {
+    pub id: String,
+    pub username: String,
+    pub role: UserRole,
+    pub is_active: bool,
+    pub first_name: String,
+    pub surname: String,
+    pub other_names: Option<String>,
 }
 
 // ============= BASIC ENUMS ===============

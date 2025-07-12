@@ -1,7 +1,7 @@
 use iced::{Element, Task, Theme, Settings};
 use uuid::Uuid;
 
-use kyefa_models::{UserAccount, UserProfile, UserRole, PersonName};
+use kyefa_models::{UserAccount, UserProfile, UserRole, PersonName, UserResponse};
 use crate::routes;
 use crate::ui::{login_view, dashboard_view};
 use crate::error::{AppError, LoginError, PasswordChangeError, DashboardError};
@@ -29,7 +29,7 @@ pub enum AppState {
 #[derive(Debug, Clone)]
 pub enum Message { 
     Login(LoginMessage),
-    LoginSuccess(UserAccount),
+    LoginSuccess(UserResponse),
     LoginFailed(LoginError),
 
     Dashboard(DashboardMessage),
@@ -65,28 +65,28 @@ impl KyefaApp {
                             Task::none()
                         }
                         LoginMessage::AttemptLogin => {
-                            // login_state.is_authenticating = true;
-                            // let username = login_state.username_input.clone();
-                            // let password = login_state.password_input.clone();
-                            // Task::perform(
-                            //     async move { routes::login(&username, &password).await },
-                            //     |result| match result {
-                            //         Ok(user) => Message::LoginSuccess(user),
-                            //         Err(error) => Message::LoginFailed(error),
-                            //     },
-                            // )
-                            let temp_user = UserAccount {
-                                id: Uuid::new_v4(),
-                                username: "admin".to_string(),
-                                password_hash: "".to_string(),
-                                role: UserRole::Admin,
-                                is_active: true,
-                                first_name: "John".to_string(),
-                                surname: "Doe".to_string(),
-                                other_names: Some("Admin".to_string()),
-                            };
-                            self.state = AppState::Dashboard(DashboardState::new(temp_user));
-                            Task::none()
+                            login_state.is_authenticating = true;
+                            let username = login_state.username_input.clone();
+                            let password = login_state.password_input.clone();
+                            Task::perform(
+                                async move { routes::login(&username, &password).await },
+                                |result| match result {
+                                    Ok(user) => Message::LoginSuccess(user),
+                                    Err(error) => Message::LoginFailed(error),
+                                },
+                            )
+                            
+                            // let temp_user = Response {
+                            //     id: 123412fsfdasdf.to_string(),
+                            //     username: "admin".to_string(),
+                            //     role: UserRole::Admin,
+                            //     is_active: true,
+                            //     first_name: "John".to_string(),
+                            //     surname: "Doe".to_string(),
+                            //     other_names: Some("Admin".to_string()),
+                            // };
+                            // self.state = AppState::Dashboard(DashboardState::new(temp_user));
+                            // Task::none()
                         }
                             
                     }
@@ -167,7 +167,7 @@ pub struct DashboardState {
 }
 
 impl DashboardState {
-    fn new(user_account: UserAccount) -> Self {
+    fn new(user_account: UserResponse) -> Self {
         Self {
             current_view: DashboardView::Home,
             student_manager: StudentManagerState {},

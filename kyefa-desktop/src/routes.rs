@@ -2,10 +2,10 @@
 use reqwest::{Client, StatusCode};
 use serde_json::json;
 
-use kyefa_models::UserAccount;
+use kyefa_models::{UserAccount, UserResponse};
 use crate::error::{LoginError};
 
-pub async fn login(username: &str, password: &str) -> Result<UserAccount, LoginError> {
+pub async fn login(username: &str, password: &str) -> Result<UserResponse, LoginError> {
     let client = Client::new();
     let response = client
         .post("http://127.0.0.1:3050/login")
@@ -19,10 +19,24 @@ pub async fn login(username: &str, password: &str) -> Result<UserAccount, LoginE
     match response {
         Ok(response) => {
             if response.status() == StatusCode::OK {
-                match response.json::<UserAccount>().await {
+                let response_text = response.text().await.map_err(|e| 
+                    LoginError::ServerError(format!("Failed to read response: {}", e))
+                )?;
+                
+                println!("Server response: {}", response_text); 
+                
+                match serde_json::from_str::<UserResponse>(&response_text) {
                     Ok(user) => Ok(user),
-                    Err(_) => Err(LoginError::ServerError("Failed to parse server response.".to_string())),
+                    Err(e) => {
+                        println!("JSON parse error: {}", e);
+                        Err(LoginError::ServerError(format!("Failed to parse server response: {}", e)))
+                    }
                 }
+
+                // match response.json::<UserAccount>().await {
+                //     Ok(user) => Ok(user),
+                //     Err(_) => Err(LoginError::ServerError("Failed to parse server response.".to_string())),
+                // }
             } else if response.status() == StatusCode::UNAUTHORIZED {
                 Err(LoginError::InvalidCredentials("Incorrect username or password.".to_string()))
             } else if response.status() == StatusCode::NOT_FOUND {
