@@ -5,23 +5,90 @@ use iced::widget::{
 };
 use iced::alignment::{Horizontal, Vertical};
 
-use crate::app::{DashboardState, Message};
+use crate::app::{DashboardState, Message, DashboardMessage, DashboardView};
 use crate::ui;
+use crate::ui::{
+    home_view, 
+    student_manager_view, 
+    teaching_period_view, 
+    payment_tracking_view, 
+    reports_analytics_view, 
+    user_access_view
+};
 
 pub fn dashboard_view(state: &DashboardState) -> Element<'_, Message> {
-    let logout_button = row![button("Logout")
-        .on_press(Message::Logout)];
+    let logout_button = row![
+        button("Logout") 
+            .style(move |theme, status| {
+                button::danger(theme, button::Status::Active)
+            })
+            .on_press(Message::Logout)
+    ];
+    let change_password_button = row![
+        button("Change Password") 
+            .on_press(Message::Dashboard(DashboardMessage::ChangePassword))
+    ];
 
-    let menu_items = column![
-        text("Add Student"),
-        text("Do something else")
+    let menu_items_data = vec![
+        ("Dashboard", DashboardMessage::NavigateToHome, DashboardView::Home),
+        ("Student Management", DashboardMessage::NavigateToStudentManager, DashboardView::StudentManager),
+        ("Teaching Periods", DashboardMessage::NavigateToTeachingPeriodManager, DashboardView::TeachingPeriodManager),
+        ("Payment Tracking", DashboardMessage::NavigateToPaymentTracking, DashboardView::PaymentTrackingManager),
+        ("Reports & Analytics", DashboardMessage::NavigateToReportsAnalytics, DashboardView::ReportsAnalytics),
+        ("User Access", DashboardMessage::NavigateToUserAccessManager, DashboardView::UserAccessManager),
+    ];
+
+    let menu_items = menu_items_data
+        .into_iter()
+        .fold(column![], |col, (label, message, view)| {
+            let is_active = std::mem::discriminant(&state.current_view) == std::mem::discriminant(&view);
+            
+            let menu_item = button(text(label))
+                .style(move |theme, status| {
+                    if is_active {
+                        button::primary(theme, status)
+                    } else {
+                        button::text(theme, status)
+                    }
+                })
+                .on_press(Message::Dashboard(message))
+                .width(Length::Fill);
+            
+            col.push(menu_item)
+        })
+        .spacing(10)
+        .padding(10)
+        .align_x(Alignment::Start);
+
+    let user_info = column![
+        text(format!("{} {}", 
+            state.active_user.name.first_name, 
+            state.active_user.name.surname))
+            .size(14),
+        text(format!("Role: {:?}", state.active_user.role))
+            .size(12)
+            .style(|theme| iced::widget::text::secondary(theme)),
     ]
-    .spacing(20)
-    .padding(10)
+    .spacing(5)
     .align_x(Alignment::Start);
 
+
+    let user_menu = column![
+        user_info,
+        change_password_button,
+        logout_button
+    ]
+    .spacing(10)
+    .padding(10);
+
+    let app_brand = container(
+        row![text("Kyefa").size(25),]
+    )
+    .padding(10)
+    .height(50);
+
     let sidebar = container(
-        column![menu_items, Space::with_height(Length::Fill), logout_button]
+        column![app_brand, menu_items, Space::with_height(Length::Fill), user_menu]
             .width(200)
             .padding(Padding {
                 top: 10.0,
@@ -33,163 +100,19 @@ pub fn dashboard_view(state: &DashboardState) -> Element<'_, Message> {
     .style(container::rounded_box)
     .center_y(Length::Fill);
 
-    let main_area = container(text("Main area").size(20));
-
     let profile_icon = ui::helper::profile(25.0);
-    let header = container(
-        row![
-            text("Kyefa").size(25), 
-            Space::with_width(Length::Fill),
-            profile_icon,
-        ]
-        .align_y(Vertical::Center)
-        .width(Length::Fill)
-    )
-    .padding(10)
-    .width(Length::Fill)
-    // .style(container::rounded_box)
-    .height(50);
 
-    column![header, row![sidebar, main_area]]
+    let main_content = match state.current_view {
+        DashboardView::Home => home_view::home_view(state),
+        DashboardView::StudentManager => student_manager_view::student_manager_view(state),
+        DashboardView::TeachingPeriodManager => teaching_period_view::teaching_period_view(state),
+        DashboardView::PaymentTrackingManager => payment_tracking_view::payment_tracking_view(state),
+        DashboardView::ReportsAnalytics => reports_analytics_view::reports_analytics_view(state),
+        DashboardView::UserAccessManager => user_access_view::user_access_view(state),
+        _ => text("Not implmented").into() 
+    };
+
+    row![sidebar, main_content]
         .width(Length::Fill)
         .into()
 }
-// pub fn dashboard_view(state: &DashboardState) -> Element<'_, Message> {
-//     // Sidebar
-//     let sidebar = column![
-//         text("Sidebar Navigation").size(20),
-//         // Add more navigation items here later
-//     ]
-//     .width(Length::Fixed(200.0))
-//     .padding(20)
-//     .spacing(10);
-// 
-//     // Payout System Content
-//     let select_term_dropdown = row![
-//         text("Select Term:").size(18),
-//         text_input("Term 1 2025, Term 2 2024...", "").width(Length::Fixed(250.0))
-//     ]
-//     .spacing(10)
-//     .align_y(Vertical::Center);
-// 
-//     let generate_payout_button = button(text("Generate Payout Preview").size(18))
-//         .padding(10);
-// 
-//     // Disbursement Preview
-//     let teacher_payouts_header = row![
-//         text("Teacher").width(Length::Fill),
-//         text("Base Share").width(Length::Fill),
-//         text("Period Share").width(Length::Fill),
-//         text("Total").width(Length::Fill),
-//     ]
-//     .spacing(10);
-// 
-//     let teacher_payout_row_1 = row![
-//         text("Mr. Kobi").width(Length::Fill),
-//         text("GHS 200").width(Length::Fill),
-//         text("GHS 800").width(Length::Fill),
-//         text("GHS 1000").width(Length::Fill),
-//     ]
-//     .spacing(10);
-// 
-//     let teacher_payout_row_2 = row![
-//         text("Mrs. Amp").width(Length::Fill),
-//         text("GHS 200").width(Length::Fill),
-//         text("GHS 750").width(Length::Fill),
-//         text("GHS 950").width(Length::Fill),
-//     ]
-//     .spacing(10);
-// 
-//     let teacher_payouts_table = column![
-//         teacher_payouts_header,
-//         teacher_payout_row_1,
-//         teacher_payout_row_2,
-//         text("...").width(Length::Fill),
-//     ]
-//     .spacing(5);
-// 
-//     let support_staff_header = row![
-//         text("Role").width(Length::Fill),
-//         text("Name").width(Length::Fill),
-//         text("Fixed Share").width(Length::Fill),
-//     ]
-//     .spacing(10);
-// 
-//     let support_staff_row_1 = row![
-//         text("Headteacher").width(Length::Fill),
-//         text("Mr. Brown").width(Length::Fill),
-//         text("GHS 500").width(Length::Fill),
-//     ]
-//     .spacing(10);
-// 
-//     let support_staff_row_2 = row![
-//         text("Janitor").width(Length::Fill),
-//         text("Ms. Eva").width(Length::Fill),
-//         text("GHS 150").width(Length::Fill),
-//     ]
-//     .spacing(10);
-// 
-//     let support_staff_shares_table = column![
-//         support_staff_header,
-//         support_staff_row_1,
-//         support_staff_row_2,
-//     ]
-//     .spacing(5);
-// 
-//     let confirm_disbursement_button = button(text("Confirm Disbursement").size(18))
-//         .padding(10);
-// 
-//     let disbursement_preview = container(column![
-//         text("Disbursement Preview").size(22).center(),
-//         Space::with_height(Length::Fixed(15.0)),
-//         text("Total Revenue (Term): GHS X,XXX.XX").size(18),
-//         text("Total Funds to Disburse: GHS Y,YYY.YY").size(18),
-//         Space::with_height(Length::Fixed(15.0)),
-//         text("**Teacher Payouts:**").size(18),
-//         teacher_payouts_table,
-//         Space::with_height(Length::Fixed(15.0)),
-//         text("**Support Staff Shares:**").size(18),
-//         support_staff_shares_table,
-//         Space::with_height(Length::Fixed(15.0)),
-//         text("Remaining Balance: GHS Z.ZZ").size(18),
-//         Space::with_height(Length::Fixed(20.0)),
-//         confirm_disbursement_button,
-//     ]
-//     .spacing(10)
-//     .padding(20))
-//     .width(Length::Fill)
-//     .height(Length::Shrink)
-//     .style(container::Style {
-//         border: Border {
-//             width: 1.0,
-//             color: Color::BLACK,
-//             ..Border::default()
-//         }
-//         ..container::Style::default()
-// 
-//     });
-// 
-//     let disbursement_history_tab = button(text("Disbursement History Tab (Click to switch view)").size(18))
-//         .padding(10);
-// 
-//     let payout_system_content = column![
-//         text("Payout System").size(28).center(),
-//         Space::with_height(Length::Fixed(20.0)),
-//         select_term_dropdown,
-//         Space::with_height(Length::Fixed(10.0)),
-//         generate_payout_button,
-//         Space::with_height(Length::Fixed(30.0)),
-//         disbursement_preview,
-//         Space::with_height(Length::Fixed(20.0)),
-//         disbursement_history_tab,
-//     ]
-//     .width(Length::Fill)
-//     .padding(20)
-//     .spacing(15);
-// 
-//     // Main Row (Sidebar + Content)
-//     row![sidebar, payout_system_content]
-//         .width(Length::Fill)
-//         .height(Length::Fill)
-//         .into()
-// }

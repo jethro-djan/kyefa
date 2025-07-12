@@ -3,7 +3,10 @@ use iced::widget::{column, text, text_input, button, container, row, Space};
 use iced::alignment::{Horizontal, Vertical};
 use iced::widget::Column;
 
-use crate::app::{Message, LoginMessage, LoginState, LoginError};
+use crate::{
+    error::LoginError,
+    app::{Message, LoginMessage, LoginState},
+};
 
 pub fn login_view(state: &LoginState) -> Element<'_, Message> {
     let username_field = text_input("Enter Username", &state.username_input)
@@ -22,13 +25,14 @@ pub fn login_view(state: &LoginState) -> Element<'_, Message> {
     let login_button = button(text("Log in").size(15).center())
         .width(250.0)
         .padding(4)
-        .on_press_maybe(
+        .style(move |theme, status| {
             if state.is_authenticating {
-                None
+                button::primary(theme, button::Status::Disabled)
             } else {
-                Some(Message::Login(LoginMessage::AttemptLogin))
+                button::primary(theme, status)
             }
-        );
+        })
+        .on_press(Message::Login(LoginMessage::AttemptLogin));
 
     let login_fields = Column::new()
         .push(username_field)

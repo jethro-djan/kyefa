@@ -3,7 +3,7 @@ use reqwest::{Client, StatusCode};
 use serde_json::json;
 
 use crate::models::UserAccount;
-use crate::app::LoginError;
+use crate::error::{LoginError};
 
 pub async fn login(username: &str, password: &str) -> Result<UserAccount, LoginError> {
     let client = Client::new();

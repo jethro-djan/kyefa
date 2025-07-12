@@ -18,6 +18,7 @@ pub enum UserRole {
 pub struct UserAccount {
     pub id: Uuid,
     pub username: String,
+    pub name: PersonName,
     pub password_hash: String,
     pub role: UserRole,
     pub is_active: bool,
@@ -213,4 +214,24 @@ struct TeacherPayoutItem {
     payout_id: Uuid,
     conducted_period_id: Uuid,
     paid_amount: f64,
+}
+
+// =========== UI TYPES =============
+
+/// User information for UI display
+#[derive(Debug, Clone)]
+pub struct UserProfile {
+    pub username: String,
+    pub name: PersonName,
+    pub role: UserRole,
+}
+
+impl From<UserAccount> for UserProfile {
+    fn from(account: UserAccount) -> Self {
+        Self {
+            username: account.username,
+            name: account.name,
+            role: account.role,
+        }
+    }
 }

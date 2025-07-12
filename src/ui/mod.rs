@@ -1,3 +1,9 @@
-pub mod login_view;
 pub mod dashboard_view;
 pub mod helper;
+pub mod home_view;
+pub mod login_view;
+pub mod student_manager_view;
+pub mod teaching_period_view;
+pub mod payment_tracking_view;
+pub mod reports_analytics_view;
+pub mod user_access_view;

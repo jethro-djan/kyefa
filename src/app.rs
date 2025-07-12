@@ -1,7 +1,10 @@
 use iced::{Element, Task, Theme, Settings};
-use crate::models::{UserRole, UserAccount};
+use uuid::Uuid;
+
+use crate::models::{UserAccount, UserProfile, UserRole, PersonName};
 use crate::routes;
 use crate::ui::{login_view, dashboard_view};
+use crate::error::{AppError, LoginError, PasswordChangeError, DashboardError};
 
 pub fn run() -> iced::Result {
     iced::application(KyefaApp::title, KyefaApp::update, KyefaApp::view)
@@ -72,16 +75,29 @@ impl KyefaApp {
                             //         Err(error) => Message::LoginFailed(error),
                             //     },
                             // )
-                            self.state = AppState::Dashboard(DashboardState::new(UserRole::Admin)); // Temporarily bypass login for UI development
+                            let temp_user = UserAccount {
+                                id: Uuid::new_v4(),
+                                username: "admin".to_string(),
+                                password_hash: "".to_string(),
+                                role: UserRole::Admin,
+                                is_active: true,
+                                name: PersonName {
+                                    first_name: "John".to_string(),
+                                    surname: "Doe".to_string(),
+                                    other_names: Some("Admin".to_string()),
+                                },
+                            };
+                            self.state = AppState::Dashboard(DashboardState::new(temp_user));
                             Task::none()
                         }
+                            
                     }
                 } else {
                     Task::none()
                 }
             }
             Message::LoginSuccess(user) => {
-                self.state = AppState::Dashboard(DashboardState::new(user.role));
+                self.state = AppState::Dashboard(DashboardState::new(user));
                 Task::none()
             }
             Message::LoginFailed(error) => {
@@ -91,9 +107,12 @@ impl KyefaApp {
                 }
                 Task::none()
             }
-            Message::Dashboard(_dashboard_message) => {
-                // Handle dashboard messages here
-                Task::none()
+            Message::Dashboard(dashboard_message) => {
+                if let AppState::Dashboard(dashboard_state) = &mut self.state {
+                    dashboard_state.update(dashboard_message)
+                } else {
+                    Task::none()
+                }
             }
             Message::Logout => {
                 self.state = AppState::Login(LoginState::new());
@@ -142,22 +161,24 @@ pub struct DashboardState {
     pub current_view: DashboardView,
     pub student_manager: StudentManagerState,
     pub teaching_period_manager: TeachingPeriodManagerState,
-    pub payout_manager: PayoutManagerState,
+    pub payment_tracking: PaymentTrackingState,
     pub user_access_manager: UserAccessManagerState,
     pub reports_analytics: ReportsAnalyticsState,
-    pub active_user_role: UserRole,
+    pub active_user: UserProfile,
+    pub error: Option<DashboardError>
 }
 
 impl DashboardState {
-    fn new(user_role: UserRole) -> Self {
+    fn new(user_account: UserAccount) -> Self {
         Self {
             current_view: DashboardView::Home,
             student_manager: StudentManagerState {},
             teaching_period_manager: TeachingPeriodManagerState {},
-            payout_manager: PayoutManagerState {},
+            payment_tracking: PaymentTrackingState {},
             user_access_manager: UserAccessManagerState {},
             reports_analytics: ReportsAnalyticsState {},
-            active_user_role: user_role,
+            active_user: user_account.into(),
+            error: None,
         }
     }
 
@@ -172,7 +193,7 @@ impl DashboardState {
                 Task::none()
             },
             DashboardMessage::NavigateToPaymentTracking => {
-                self.current_view = DashboardView::PayoutManager;
+                self.current_view = DashboardView::PaymentTrackingManager;
                 Task::none()
             },
             DashboardMessage::NavigateToReportsAnalytics => {
@@ -181,6 +202,18 @@ impl DashboardState {
             },
             DashboardMessage::NavigateToUserAccessManager => {
                 self.current_view = DashboardView::UserAccessManager;
+                Task::none()
+            },
+            DashboardMessage::NavigateToHome => {
+                self.current_view = DashboardView::Home;
+                Task::none()
+            },
+            DashboardMessage::ChangePassword => {
+                // TODO: Implement ChangePassword logic
+                Task::none()
+            },
+            DashboardMessage::PasswordChanged(_) => {
+                // TODO: Implement PasswordChanged logic
                 Task::none()
             },
         }
@@ -198,18 +231,23 @@ pub enum DashboardView {
     Home,
     StudentManager,
     TeachingPeriodManager,
-    PayoutManager,
+    PaymentTrackingManager,
     UserAccessManager,
     ReportsAnalytics,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub enum DashboardMessage {
+    #[default]
+    NavigateToHome,
     NavigateToStudentManager,
     NavigateToTeachingPeriodManager,
     NavigateToPaymentTracking,
     NavigateToReportsAnalytics,
     NavigateToUserAccessManager,
+
+    ChangePassword,
+    PasswordChanged(Result<(), PasswordChangeError>), 
 }
   
 #[derive(Debug)]
@@ -219,7 +257,7 @@ pub struct StudentManagerState {}
 pub struct TeachingPeriodManagerState {}
 
 #[derive(Debug)]
-pub struct PayoutManagerState {}
+pub struct PaymentTrackingState {}
 
 #[derive(Debug)]
 pub struct UserAccessManagerState {}
@@ -229,25 +267,3 @@ pub struct ReportsAnalyticsState {}
 
 #[derive(Debug)]
 pub struct AppSettings {}
-
-#[derive(Debug)]
-pub enum AppError {
-    Login(LoginError),
-    Dashboard(DashboardError),
-    Configuration(String),
-}
-
-#[derive(Debug, Clone)]
-pub enum LoginError {
-    UserNotFound(String),
-    InvalidCredentials(String),
-    NetworkIssue(String),
-    ServerError(String),
-}
-
-#[derive(Debug)]
-pub enum DashboardError {
-    StudentNotFound,
-    PaymentDataNotLoaded,
-}
-
