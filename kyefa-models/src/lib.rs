@@ -102,6 +102,16 @@ pub enum Gender {
     Female,
 }
 
+impl Gender {
+    pub const ALL: [Gender; 2] = [Gender::Male, Gender::Female]; 
+}
+
+impl std::fmt::Display for Gender {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self) 
+    }
+}
+
 /// Academic class/level
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "database", derive(sqlx::Type))]
@@ -116,6 +126,26 @@ pub enum ClassLevel {
     WASSCE3,
     ALevel1,
     ALevel2,
+}
+
+impl ClassLevel {
+    pub const ALL: [ClassLevel; 9] = [ 
+        ClassLevel::LowerSecondaryYear8,
+        ClassLevel::LowerSecondaryYear9,
+        ClassLevel::IGCSE1,
+        ClassLevel::IGCSE2,
+        ClassLevel::WASSCE1,
+        ClassLevel::WASSCE2,
+        ClassLevel::WASSCE3,
+        ClassLevel::ALevel1,
+        ClassLevel::ALevel2,
+    ];
+}
+
+impl std::fmt::Display for ClassLevel {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
 
 /// Education stream (syllabus)

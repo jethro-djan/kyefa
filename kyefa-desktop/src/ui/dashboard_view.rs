@@ -51,14 +51,12 @@ pub fn dashboard_view(state: &DashboardState) -> Element<'_, Message> {
         .fold(column![], |col, (label, message, view)| {
             let is_active = std::mem::discriminant(&state.current_view) == std::mem::discriminant(&view);
             
-            // Choose icon color based on active state
             let icon_color = if is_active {
                 Some(Color::WHITE)
             } else {
-                None // Use default color
+                None
             };
             
-            // Get the appropriate icon based on the view
             let icon = match view {
                 DashboardView::Home => ui::helper::home(20.0, 20.0, icon_color),
                 DashboardView::StudentManager => ui::helper::student(20.0, 20.0, icon_color),
@@ -135,11 +133,26 @@ pub fn dashboard_view(state: &DashboardState) -> Element<'_, Message> {
 
     let main_content = match state.current_view {
         DashboardView::Home => home_view::home_view(state),
-        DashboardView::StudentManager => student_manager_view::student_manager_view(state),
-        DashboardView::TeachingPeriodManager => teaching_period_view::teaching_period_view(state),
-        DashboardView::PaymentTrackingManager => payment_tracking_view::payment_tracking_view(state),
-        DashboardView::ReportsAnalytics => reports_analytics_view::reports_analytics_view(state),
-        DashboardView::UserAccessManager => user_access_view::user_access_view(state),
+        DashboardView::StudentManager => {
+            student_manager_view::student_manager_view(&state.student_manager)
+                .map(|msg| Message::Dashboard(DashboardMessage::StudentManager(msg)))
+        },
+        DashboardView::TeachingPeriodManager => {
+            teaching_period_view::teaching_period_view(&state.teaching_period_manager)
+                .map(|msg| Message::Dashboard(msg))
+        },
+        DashboardView::PaymentTrackingManager => {
+            payment_tracking_view::payment_tracking_view(&state.payment_tracking)
+                .map(|msg| Message::Dashboard(msg))
+        },
+        DashboardView::ReportsAnalytics => {
+            reports_analytics_view::reports_analytics_view(&state.reports_analytics)
+                .map(|msg| Message::Dashboard(msg))
+        },
+        DashboardView::UserAccessManager => {
+            user_access_view::user_access_view(&state.user_access_manager)
+                .map(|msg| Message::Dashboard(msg))
+        },
     };
 
     row![sidebar, main_content]
