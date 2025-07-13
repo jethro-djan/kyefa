@@ -14,6 +14,7 @@ pub enum AppError {
     NetworkIssue(String),  
     SerializationError(String),
     BackendError(String),  
+    IoError(String),
 }
 
 #[derive(Debug, Clone)]
@@ -50,6 +51,7 @@ impl fmt::Display for AppError {
             AppError::NetworkIssue(msg) => write!(f, "Network Issue: {}", msg),
             AppError::SerializationError(msg) => write!(f, "Serialization Error: {}", msg),
             AppError::BackendError(msg) => write!(f, "Backend API Error: {}", msg),
+            AppError::IoError(msg) => write!(f, "IO Error: {}", msg),
         }
     }
 }

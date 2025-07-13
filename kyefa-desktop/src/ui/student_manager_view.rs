@@ -8,8 +8,17 @@ use crate::app::StudentManagerState;
 use kyefa_models::{Gender, ClassLevel, Student};
 
 pub fn student_manager_view<'a>(state: &'a StudentManagerState) -> Element<'a, DashboardMessage> {
+    let header = row![
+        text("Student Management").size(24),
+        Space::with_width(Length::Fill),
+        button("Import from Excel")
+            .style(button::secondary)
+            .on_press(DashboardMessage::StudentManager(StudentManagerMessage::ImportStudentsFromExcel)),
+    ];
+
     let add_student_section = column![
-        text("Add New Student").size(24),
+        header,
+        text("Add New Student").size(20),
         text_input("First Name", &state.first_name_input)
             .on_input(|s| DashboardMessage::StudentManager(StudentManagerMessage::FirstNameInputChanged(s)))
             .padding(10),

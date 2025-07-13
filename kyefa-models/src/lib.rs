@@ -1,5 +1,5 @@
-use {uuid::uuid, uuid::Uuid};
-use chrono::NaiveDateTime;
+use uuid::Uuid;
+use chrono::{NaiveDateTime, NaiveDate, Utc, DateTime};
 use serde::{Serialize, Deserialize};
 use std::str::FromStr;
 
@@ -17,6 +17,8 @@ pub enum UserRole {
     CommitteeMember,
     Headteacher,
     DataEntry,
+    Staff,
+    Teacher,
 }
 
 /// Represents a person's full name
@@ -49,6 +51,10 @@ pub struct UserProfile {
     pub name: PersonName,
     pub role: UserRole,
 }
+
+// Type alias for convenience in the new UI
+pub type User = UserProfile;
+
 
 impl From<UserAccount> for UserProfile {
     fn from(account: UserAccount) -> Self {
@@ -115,7 +121,8 @@ impl std::fmt::Display for Gender {
 /// Academic class/level
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "database", derive(sqlx::Type))]
-#[cfg_attr(feature = "database", sqlx(rename_all = "PascalCase"))]
+#[cfg_attr(feature = "database", sqlx(type_name = "class_level"))]
+#[cfg_attr(feature = "database", sqlx(rename_all = "snake_case"))]
 pub enum ClassLevel {
     LowerSecondaryYear8,
     LowerSecondaryYear9,
@@ -145,6 +152,25 @@ impl ClassLevel {
 impl std::fmt::Display for ClassLevel {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}", self)
+    }
+}
+
+impl FromStr for ClassLevel {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "LowerSecondaryYear8" => Ok(ClassLevel::LowerSecondaryYear8),
+            "LowerSecondaryYear9" => Ok(ClassLevel::LowerSecondaryYear9),
+            "IGCSE1" => Ok(ClassLevel::IGCSE1),
+            "IGCSE2" => Ok(ClassLevel::IGCSE2),
+            "WASSCE1" => Ok(ClassLevel::WASSCE1),
+            "WASSCE2" => Ok(ClassLevel::WASSCE2),
+            "WASSCE3" => Ok(ClassLevel::WASSCE3),
+            "ALevel1" => Ok(ClassLevel::ALevel1),
+            "ALevel2" => Ok(ClassLevel::ALevel2),
+            _ => Err(()),
+        }
     }
 }
 
@@ -291,6 +317,8 @@ pub struct Student {
     pub gender: Gender,
     pub class_level: ClassLevel,
     pub is_active: bool,
+    pub fee_amount: f64,
+    pub payment_status: PaymentStatus,
 }
 
 impl From<StudentRow> for Student {
@@ -305,6 +333,9 @@ impl From<StudentRow> for Student {
             gender: row.gender,
             class_level: row.class_level,
             is_active: row.is_active,
+            // Default values for new fields
+            fee_amount: 0.0, 
+            payment_status: PaymentStatus::NotPaid,
         }
     }
 }
@@ -429,10 +460,96 @@ impl From<ConductedPeriodRow> for ConductedPeriod {
     }
 }
 
-// ============= FINANCIAL MODELS ===============
+// ============= FINANCIAL & UI MODELS ===============
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum PaymentStatus {
+    Paid,
+    Partial,
+    NotPaid,
+    Exempt,
+}
+
+impl std::fmt::Display for PaymentStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+/// UI-specific Payment model
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Payment {
+    pub id: String,
+    pub student_id: String,
+    pub amount: f64,
+    pub method: String,
+    pub description: String,
+    pub status: PaymentStatus,
+}
+
+/// UI-specific TeachingPeriod model
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TeachingPeriod {
+    pub id: String,
+    pub subject: String,
+    pub class: String,
+    pub rate: f64,
+    pub date: NaiveDate,
+    pub start_time: u32,
+    pub end_time: u32,
+    pub teacher_name: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct RecentActivity {
+    pub id: String,
+    pub activity_type: ActivityType,
+    pub description: String,
+    pub timestamp: DateTime<Utc>,
+    pub user_name: String,
+}
+
+#[derive(Debug, Clone)]
+pub enum ActivityType {
+    PaymentReceived,
+    StudentAdded,
+    TeachingPeriodCreated,
+    UserCreated,
+}
+
+#[derive(Debug, Clone)]
+pub struct PaymentSummary {
+    pub total_expected: f64,
+    pub total_received: f64,
+    pub total_pending: f64,
+    pub paid_count: usize,
+    pub partial_count: usize,
+    pub unpaid_count: usize,
+    pub exempt_count: usize,
+}
+
+#[derive(Debug, Clone)]
+pub struct TeacherEarnings {
+    pub teacher_id: String,
+    pub teacher_name: String,
+    pub total_periods: usize,
+    pub total_earnings: f64,
+    pub share_percentage: f64,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum ReportType {
+    ProjectedIncome,
+    CollectionStatus,
+    TeacherEarnings,
+    StudentPayments,
+}
+
+
+// ============= ORIGINAL FINANCIAL MODELS ===============
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DbPayment {
     pub id: Uuid,
     pub student_id: Uuid,
     pub term_id: Uuid,
@@ -482,4 +599,26 @@ pub struct TeacherPayoutItem {
     pub payout_id: Uuid,
     pub conducted_period_id: Uuid,
     pub paid_amount: f64,
+}
+
+
+// ============= HTTP/API COMMS ===============
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CreateStudentPayload {
+    pub first_name: String,
+    pub surname: String,
+    pub other_names: Option<String>,
+    pub gender: Gender,
+    pub class_level: ClassLevel,
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct UpdateStudentPayload {
+    pub id: Uuid,
+    pub first_name: String,
+    pub surname: String,
+    pub other_names: Option<String>,
+    pub gender: Gender,
+    pub class_level: ClassLevel,
 }

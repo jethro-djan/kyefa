@@ -1,11 +1,11 @@
-use iced::{Element, Length, Color, Border, Alignment, Padding};
+use iced::{Element, Length, Color, Alignment, Padding};
 use iced::widget::{
     column, row, text, button, container, 
-    text_input, Space,
+    Space,
 };
-use iced::alignment::{Horizontal, Vertical};
+use iced::alignment::{Vertical};
 
-use crate::app::{DashboardState, Message, DashboardMessage, DashboardView};
+use crate::app::{DashboardState, Message, DashboardMessage, DashboardView, StudentManagerMessage, TeachingPeriodMessage, PaymentTrackingMessage, ReportsAnalyticsMessage, UserAccessMessage};
 use crate::ui;
 use crate::ui::{
     home_view, 
@@ -131,27 +131,23 @@ pub fn dashboard_view(state: &DashboardState) -> Element<'_, Message> {
     .style(container::rounded_box)
     .center_y(Length::Fill);
 
-    let main_content = match state.current_view {
-        DashboardView::Home => home_view::home_view(state),
+    let main_content: Element<'_, Message> = match state.current_view {
+        DashboardView::Home => home_view::home_view(state).into(),
         DashboardView::StudentManager => {
             student_manager_view::student_manager_view(&state.student_manager)
-                .map(|msg| Message::Dashboard(DashboardMessage::StudentManager(msg)))
+                .map(|msg| Message::Dashboard(msg))
         },
         DashboardView::TeachingPeriodManager => {
             teaching_period_view::teaching_period_view(&state.teaching_period_manager)
-                .map(|msg| Message::Dashboard(msg))
         },
         DashboardView::PaymentTrackingManager => {
             payment_tracking_view::payment_tracking_view(&state.payment_tracking)
-                .map(|msg| Message::Dashboard(msg))
         },
         DashboardView::ReportsAnalytics => {
             reports_analytics_view::reports_analytics_view(&state.reports_analytics)
-                .map(|msg| Message::Dashboard(msg))
         },
         DashboardView::UserAccessManager => {
             user_access_view::user_access_view(&state.user_access_manager)
-                .map(|msg| Message::Dashboard(msg))
         },
     };
 
