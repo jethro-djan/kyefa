@@ -2427,8 +2427,10 @@ name = "kyefa-desktop"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "dotenvy",
  "iced",
  "kyefa-models",
+ "once_cell",
  "reqwest",
  "serde",
  "serde_json",

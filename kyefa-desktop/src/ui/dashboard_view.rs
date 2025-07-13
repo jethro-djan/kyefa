@@ -15,6 +15,7 @@ use crate::ui::{
     reports_analytics_view, 
     user_access_view
 };
+use kyefa_models::UserRole;
 
 pub fn dashboard_view(state: &DashboardState) -> Element<'_, Message> {
     let logout_button = row![
@@ -40,19 +41,50 @@ pub fn dashboard_view(state: &DashboardState) -> Element<'_, Message> {
 
     let menu_items = menu_items_data
         .into_iter()
+        .filter(|(label, _, _)| {
+            if *label == "User Access" {
+                matches!(state.active_user.role, UserRole::Admin)
+            } else {
+                true
+            }
+        })
         .fold(column![], |col, (label, message, view)| {
             let is_active = std::mem::discriminant(&state.current_view) == std::mem::discriminant(&view);
             
-            let menu_item = button(text(label))
-                .style(move |theme, status| {
-                    if is_active {
-                        button::primary(theme, status)
-                    } else {
-                        button::text(theme, status)
-                    }
-                })
-                .on_press(Message::Dashboard(message))
-                .width(Length::Fill);
+            // Choose icon color based on active state
+            let icon_color = if is_active {
+                Some(Color::WHITE)
+            } else {
+                None // Use default color
+            };
+            
+            // Get the appropriate icon based on the view
+            let icon = match view {
+                DashboardView::Home => ui::helper::home(20.0, 20.0, icon_color),
+                DashboardView::StudentManager => ui::helper::student(20.0, 20.0, icon_color),
+                DashboardView::TeachingPeriodManager => ui::helper::period(20.0, 20.0, icon_color),
+                DashboardView::PaymentTrackingManager => ui::helper::payment(20.0, 20.0, icon_color),
+                DashboardView::ReportsAnalytics => ui::helper::report(20.0, 20.0, icon_color),
+                DashboardView::UserAccessManager => ui::helper::access(20.0, 20.0, icon_color),
+            };
+            
+            let menu_item = button(
+                row![
+                    container(icon),
+                    Space::with_width(Length::Fixed(20.0)),
+                    text(label)
+                ]
+                .align_y(Vertical::Center)
+            )
+            .style(move |theme, status| {
+                if is_active {
+                    button::primary(theme, status)
+                } else {
+                    button::text(theme, status)
+                }
+            })
+            .on_press(Message::Dashboard(message))
+            .width(Length::Fill);
             
             col.push(menu_item)
         })
@@ -69,8 +101,7 @@ pub fn dashboard_view(state: &DashboardState) -> Element<'_, Message> {
             .size(12)
             .style(|theme| iced::widget::text::secondary(theme)),
     ]
-    .spacing(5)
-    .align_x(Alignment::Start);
+    .spacing(5);
 
 
     let user_menu = column![
@@ -79,7 +110,8 @@ pub fn dashboard_view(state: &DashboardState) -> Element<'_, Message> {
         logout_button
     ]
     .spacing(10)
-    .padding(10);
+    .padding(10)
+    .align_x(Alignment::Start);
 
     let app_brand = container(
         row![text("Kyefa").size(25),]
@@ -89,18 +121,17 @@ pub fn dashboard_view(state: &DashboardState) -> Element<'_, Message> {
 
     let sidebar = container(
         column![app_brand, menu_items, Space::with_height(Length::Fill), user_menu]
-            .width(200)
+            .width(280)
             .padding(Padding {
                 top: 10.0,
                 bottom: 50.0,
+                left: 25.0,
                 ..Padding::default()
             })
-            .align_x(Alignment::Center)
+            .align_x(Alignment::Start)
     )
     .style(container::rounded_box)
     .center_y(Length::Fill);
-
-    let profile_icon = ui::helper::profile(25.0);
 
     let main_content = match state.current_view {
         DashboardView::Home => home_view::home_view(state),
@@ -109,7 +140,6 @@ pub fn dashboard_view(state: &DashboardState) -> Element<'_, Message> {
         DashboardView::PaymentTrackingManager => payment_tracking_view::payment_tracking_view(state),
         DashboardView::ReportsAnalytics => reports_analytics_view::reports_analytics_view(state),
         DashboardView::UserAccessManager => user_access_view::user_access_view(state),
-        _ => text("Not implmented").into() 
     };
 
     row![sidebar, main_content]
