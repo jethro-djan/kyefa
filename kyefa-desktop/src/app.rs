@@ -343,6 +343,8 @@ pub enum StudentManagerMessage {
     StudentDeleted(Result<(), String>),
     CancelEdit,
 
+    GenerateExcelTemplate,
+    TemplateGenerationResult(Result<(), AppError>),
     ImportStudentsFromExcel,
     ImportResult(Result<(), AppError>),
 }
@@ -699,6 +701,26 @@ impl StudentManagerState {
                         Task::none()
                     }
                 }
+            }
+
+            StudentManagerMessage::GenerateExcelTemplate => {
+                Task::perform(
+                    async {
+                        routes::pick_path_and_generate_excel_template()
+                    },
+                    |result| StudentManagerMessage::TemplateGenerationResult(result),
+                )
+            }
+            StudentManagerMessage::TemplateGenerationResult(result) => {
+                match result {
+                    Ok(_) => {
+                        self.show_success_message = true;
+                    }
+                    Err(err) => {
+                        self.form_error_message = Some(format!("Template generation failed: {}", err));
+                    }
+                }
+                Task::none()
             }
 
         }

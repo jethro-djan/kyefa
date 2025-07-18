@@ -11,8 +11,11 @@ pub fn student_manager_view<'a>(state: &'a StudentManagerState) -> Element<'a, D
     let header = row![
         text("Student Management").size(24),
         Space::with_width(Length::Fill),
-        button("Import from Excel")
+        button("Download Excel Template") 
             .style(button::secondary)
+            .on_press(DashboardMessage::StudentManager(StudentManagerMessage::GenerateExcelTemplate)),
+        button("Import from Excel")
+            .style(button::primary)
             .on_press(DashboardMessage::StudentManager(StudentManagerMessage::ImportStudentsFromExcel)),
     ];
 

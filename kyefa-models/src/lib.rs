@@ -110,6 +110,10 @@ pub enum Gender {
 
 impl Gender {
     pub const ALL: [Gender; 2] = [Gender::Male, Gender::Female]; 
+
+    pub fn excel_options() -> &'static str {
+        "Male,Female"
+    }
 }
 
 impl std::fmt::Display for Gender {
@@ -147,6 +151,10 @@ impl ClassLevel {
         ClassLevel::ALevel1,
         ClassLevel::ALevel2,
     ];
+
+    pub fn excel_options() -> &'static str {
+        "LowerSecondaryYear8,LowerSecondaryYear9,IGCSE1,IGCSE2,WASSCE1,WASSCE2,WASSCE3,ALevel1,ALevel2"
+    }
 }
 
 impl std::fmt::Display for ClassLevel {
